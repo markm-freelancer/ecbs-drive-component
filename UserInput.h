@@ -17,13 +17,13 @@ InputParams readInputParams() {
 	int key = getch();
 	switch (key) {
 	case 72://up arrow
-		input.joystickPos += 100;
+		input.joystickPos += 50;
 		if (input.joystickPos > 1000) {
 			input.joystickPos = 1000;
 		}
 		break;
 	case 80://down arrow
-		input.joystickPos -= 100;
+		input.joystickPos -= 50;
 		if (input.joystickPos < -1000) {
 			input.joystickPos = -1000;
 		}

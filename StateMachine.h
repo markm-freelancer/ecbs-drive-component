@@ -6,8 +6,7 @@
 #include "Dtos.h"
 #include "States.h"
 
-float holdTimeToActivate = 5000;
-
+float holdTimeToActivate = 3000;
 timeval timeInMilliseconds();
 float timedifference_msec(timeval t0, timeval t1);
 int getMotorThrottle(int joystickPos);
@@ -15,7 +14,7 @@ int getMotorThrottle(int joystickPos);
 struct StateMachine {
 	timeval buttonHoldStart;
 	bool buttonsHeld;
-	bool buttonsReleased;
+	bool allowEnableDisable;
 	SystemState systemState;
 };
 
@@ -34,22 +33,21 @@ OutputParams processInputParams(InputParams input) {
 
 	if (input.btnFwd && input.btnBack && !stateMachine.buttonsHeld) {
 		stateMachine.buttonsHeld = true;
-		stateMachine.buttonsReleased = false;
 		gettimeofday(&stateMachine.buttonHoldStart, NULL);
 	} else if (!input.btnFwd || !input.btnBack) {
 		stateMachine.buttonsHeld = false;
-		stateMachine.buttonsReleased = true;
+		stateMachine.allowEnableDisable = true;
 	}
 
-	if (stateMachine.buttonsHeld) {
+	if (stateMachine.buttonsHeld && stateMachine.allowEnableDisable) {
 		timeval now;
 		gettimeofday(&now, NULL);
 		float timeSinceHoldStart = timedifference_msec(stateMachine.buttonHoldStart, now);
-		printf("time since hold start: %4.0f", timeSinceHoldStart);
+		printf("\nTime since hold start: %4.0f", timeSinceHoldStart);
 		if (timeSinceHoldStart >= holdTimeToActivate) {
 			stateMachine.systemState = stateMachine.systemState == ENABLED ? DISABLED : ENABLED;
 			stateMachine.buttonHoldStart = now;
-			stateMachine.buttonsReleased = false;
+			stateMachine.allowEnableDisable = false;
 		}
 	}
 

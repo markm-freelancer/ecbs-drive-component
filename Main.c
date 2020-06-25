@@ -39,7 +39,7 @@ void printInputParams(InputParams input) {
 
 void printOutputParams(OutputParams output) {
 	printf("\nOutput params");
-	printf("\nMotor state: %d", output.motorEnabled);
+	printf("\nMotor enabled: %s", output.motorEnabled ? "true" : "false");
 	printf("\nMotor throttle: %d", output.motorThrottle);
 }
 
