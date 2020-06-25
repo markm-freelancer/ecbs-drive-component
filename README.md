@@ -2,9 +2,13 @@
 A drive component simulator. Built in C in Windows.
 ## Controls:
 w - Toggle forward button pressed
+
 e - Toggle backward button pressed
+
 Up arrow - Move joystick forward
+
 Down arrow - Move joystick backward
+
 q - Quit
 
 ## Disabling and enabling the motor
