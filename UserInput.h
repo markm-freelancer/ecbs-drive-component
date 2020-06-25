@@ -28,6 +28,12 @@ InputParams readInputParams() {
 			input.joystickPos = -1000;
 		}
 		break;
+	case 75: //left arrow
+		input.temp -= 100;
+		break;
+	case 77: //right arrow
+		input.temp += 100;
+		break;
 	case 119: //w key
 		input.btnFwd = !input.btnFwd;
 		break;

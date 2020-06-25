@@ -9,6 +9,10 @@ Up arrow - Move joystick forward
 
 Down arrow - Move joystick backward
 
+Left arrow - Decrease temperature input
+
+Right arrow - Increase temperature input
+
 q - Quit
 
 ## Disabling and enabling the motor

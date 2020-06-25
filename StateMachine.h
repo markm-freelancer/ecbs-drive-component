@@ -22,6 +22,8 @@ static OutputParams output = {
 	false,
 	0
 };
+static int MIN_TEMPERATURE = -1000;
+static int MAX_TEMPERATURE = 1000;
 
 OutputParams processInputParams(InputParams input) {
 	static StateMachine stateMachine = {
@@ -49,6 +51,10 @@ OutputParams processInputParams(InputParams input) {
 			stateMachine.buttonHoldStart = now;
 			stateMachine.allowEnableDisable = false;
 		}
+	}
+
+	if (input.temp > MAX_TEMPERATURE || input.temp < MIN_TEMPERATURE) {
+		stateMachine.systemState = DISABLED;
 	}
 
 	switch (stateMachine.systemState) {
