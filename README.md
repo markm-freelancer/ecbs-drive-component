@@ -18,14 +18,10 @@ B -- Temperature reaches 5000 --> A
 
 ## Motor Throttle value
 Throttle value < -100
-$$
-y = \frac{10}{9} x + \frac{1000}{9}
-$$
+y = 10/9 x + 1000/9
 
 Throttle value > 100
-$$
-y = \frac{10}{9} x -\frac{1000}{9}
-$$
+y = 10/9 x - 1000/9
 
 else, 0
 
