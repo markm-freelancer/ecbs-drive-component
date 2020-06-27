@@ -1,98 +1,168 @@
 #ifndef STATEMACHINE_H
 #define STATEMACHINE_H
 
+#define SLOPE 1.11111f
+#define B 111.11111f
+#define ACTIVE_BACK -100
+#define ACTIVE_FWD 100.0
+#define MS_PER_INVOCATION 100
+
 #include <stdbool.h>
-#include <sys/time.h>
 #include "Dtos.h"
 #include "States.h"
 
-float holdTimeToActivate = 3000;
-timeval timeInMilliseconds();
-float timedifference_msec(timeval t0, timeval t1);
-int getMotorThrottle(int joystickPos);
-
 struct StateMachine {
-	timeval buttonHoldStart;
+	int holdToStartDuration;
 	bool buttonsHeld;
 	bool allowEnableDisable;
+	int cruiseThrottle;
+	int holdToCruiseDuration;
+	bool allowDisableCruiseByJoystick;
+	bool allowDisableCruiseByBtn;
+	int lastButtonConfig[2];
+	struct Configuration config;
 	SystemState systemState;
 };
+
+void processStartStop(InputParams input, StateMachine &stateMachine);
+void calculateMotorThrottle(InputParams input, StateMachine &stateMachine);
+int getMotorThrottle(int joystickPos);
+void processTemperatureParams(InputParams input, StateMachine &stateMachine);
 
 static OutputParams output = {
 	false,
 	0
 };
-static int MIN_TEMPERATURE = -1000;
-static int MAX_TEMPERATURE = 1000;
 
 OutputParams processInputParams(InputParams input) {
 	static StateMachine stateMachine = {
 		0,
 		false,
 		true,
-		DISABLED
+		0,
+		0,
+		true,
+		true,
+		{0, 0},
+		readConfiguration(),
+		DISABLED,
 	};
 
-	if (input.btnFwd && input.btnBack && !stateMachine.buttonsHeld) {
-		stateMachine.buttonsHeld = true;
-		gettimeofday(&stateMachine.buttonHoldStart, NULL);
-	} else if (!input.btnFwd || !input.btnBack) {
-		stateMachine.buttonsHeld = false;
-		stateMachine.allowEnableDisable = true;
-	}
+	//start / stop check
+	processStartStop(input, stateMachine);
 
-	if (stateMachine.buttonsHeld && stateMachine.allowEnableDisable) {
-		timeval now;
-		gettimeofday(&now, NULL);
-		float timeSinceHoldStart = timedifference_msec(stateMachine.buttonHoldStart, now);
-		printf("\nTime since hold start: %4.0f", timeSinceHoldStart);
-		if (timeSinceHoldStart >= holdTimeToActivate) {
-			stateMachine.systemState = stateMachine.systemState == ENABLED ? DISABLED : ENABLED;
-			stateMachine.buttonHoldStart = now;
-			stateMachine.allowEnableDisable = false;
-		}
-	}
+	//calculate motor throttle & machine cruise input
+	calculateMotorThrottle(input, stateMachine);
 
-	if (input.temp > MAX_TEMPERATURE || input.temp < MIN_TEMPERATURE) {
-		stateMachine.systemState = DISABLED;
-	}
+	//min/max temperature check
+	processTemperatureParams(input, stateMachine);
 
 	switch (stateMachine.systemState) {
-		case ENABLED:
-			output.motorEnabled = true;
-			output.motorThrottle = getMotorThrottle(input.joystickPos);
-			break;
 		case DISABLED:
 			output.motorEnabled = false;
 			output.motorThrottle = 0;
+			printf("\nSystem state = DISABLED");
+			break;
+		case ENABLED:
+			output.motorEnabled = true;
+			output.motorThrottle = getMotorThrottle(input.joystickPos);
+			printf("\nSystem state = ENABLED");
+			break;
+		case CRUISE:
+			output.motorEnabled = true;
+			output.motorThrottle = stateMachine.cruiseThrottle;
+			printf("\nSystem state = CRUISE");
 			break;
 	}
-
 	return output;
 }
 
-timeval timeInMilliseconds() {
-	struct timeval start, stop;
-	gettimeofday(&start, NULL);
-	printf("%ld\n", start.tv_usec);
-	return start;
+void processStartStop(InputParams input, StateMachine &stateMachine) {
+	switch (stateMachine.systemState) {
+		case ENABLED:
+		case DISABLED:
+			if (input.btnFwd && input.btnBack && !stateMachine.buttonsHeld) {
+				stateMachine.buttonsHeld = true;
+			} else if (!input.btnFwd || !input.btnBack) {
+				stateMachine.buttonsHeld = false;
+				stateMachine.allowEnableDisable = true;
+			}
+		
+			if (stateMachine.buttonsHeld && stateMachine.allowEnableDisable) {
+				stateMachine.holdToStartDuration += MS_PER_INVOCATION;
+				if (stateMachine.holdToStartDuration >= stateMachine.config.holdToStartTime) {
+					stateMachine.systemState = stateMachine.systemState == ENABLED ? DISABLED : ENABLED;
+					stateMachine.holdToStartDuration = 0;
+					stateMachine.allowEnableDisable = false;
+				}
+			}
+			break;
+		case CRUISE:
+			//do nothing
+			break;
+	}
+
+
+	printf("\nHold to start duration: %d", stateMachine.holdToStartDuration);
 }
 
-float timedifference_msec(struct timeval t0, struct timeval t1) {
-    return (t1.tv_sec - t0.tv_sec) * 1000.0f + (t1.tv_usec - t0.tv_usec) / 1000.0f;
+void calculateMotorThrottle(InputParams input, StateMachine &stateMachine) {
+	int motorThrottle = getMotorThrottle(input.joystickPos);
+	bool outsideHoldzoneNegative, outsideHoldzonePositive;
+
+	printf("\nHold zone: %d", stateMachine.config.holdZoneForJoystick);
+	printf("\nHold to cruise duration: %d", stateMachine.holdToCruiseDuration);
+	printf("\nHold to cruise time: %d", stateMachine.config.holdToCruiseTime);
+
+	//check if cruise should be activated
+	switch (stateMachine.systemState) {
+		case ENABLED:
+			if ((motorThrottle > stateMachine.config.holdZoneForJoystick && input.btnBack) ||
+			    (motorThrottle < -stateMachine.config.holdZoneForJoystick && input.btnFwd)) {
+				stateMachine.holdToCruiseDuration += MS_PER_INVOCATION;
+				if (stateMachine.holdToCruiseDuration >= stateMachine.config.holdToCruiseTime) {
+					stateMachine.systemState = CRUISE;
+					stateMachine.cruiseThrottle = motorThrottle;
+					stateMachine.holdToCruiseDuration = 0;
+					stateMachine.allowDisableCruiseByJoystick = false;
+					stateMachine.lastButtonConfig[0] = input.btnFwd;
+					stateMachine.lastButtonConfig[1] = input.btnBack;
+				}
+			} else {
+				stateMachine.holdToCruiseDuration = 0;
+			}
+			break;
+		case CRUISE:
+			outsideHoldzoneNegative = input.joystickPos <= 0 && input.joystickPos > -stateMachine.config.holdZoneForJoystick;
+			outsideHoldzonePositive = input.joystickPos >= 0 && input.joystickPos < stateMachine.config.holdZoneForJoystick;
+			if (outsideHoldzoneNegative || outsideHoldzonePositive) {
+				stateMachine.allowDisableCruiseByJoystick = true;
+			} else if (stateMachine.allowDisableCruiseByJoystick && !outsideHoldzoneNegative && !outsideHoldzonePositive) {
+				stateMachine.systemState = ENABLED;
+			}
+			if (input.btnFwd != stateMachine.lastButtonConfig[0] || input.btnBack != stateMachine.lastButtonConfig[1]) {
+				stateMachine.systemState = ENABLED;
+			}
+			break;
+	}
 }
 
 int getMotorThrottle(int joystickPos) {
-	static float slope = 10.000f/9.000f;
-	static float b = 1000.000f/9.000f;
-	if (joystickPos < -100) {
+	if (joystickPos < ACTIVE_BACK) {
 		//y = (10/9)x + 1000/9
-		return (slope * joystickPos) + b;
-	} else if (joystickPos > 100) {
+		return (SLOPE * joystickPos) + B;
+	} else if (joystickPos > ACTIVE_FWD) {
 		//y = (10/9)x - 1000/9
-		return (slope * joystickPos) - b;
+		return (SLOPE * joystickPos) - B;
 	}
 	return 0;
 }
+
+void processTemperatureParams(InputParams input, StateMachine &stateMachine) {
+	if (input.temp < stateMachine.config.minTemp || input.temp > stateMachine.config.maxTemp) {
+		stateMachine.systemState = DISABLED;
+	}
+}
+
 #endif
 

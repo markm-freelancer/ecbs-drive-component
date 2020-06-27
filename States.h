@@ -12,15 +12,9 @@
 typedef enum
 {
 	DISABLED,
-	ENABLED
+	ENABLED,
+	CRUISE
 } SystemState;
 
-//Different states of the motor
-typedef enum
-{
-    IDLE,
-    FORWARD,
-	REVERSE,
-} MotorState;
-
 #endif /* STATES_H_ */
+

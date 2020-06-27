@@ -21,4 +21,12 @@ struct OutputParams {
 	int motorThrottle;
 };
 
+struct Configuration {
+	int holdToStartTime;
+	int holdZoneForJoystick;
+	int holdToCruiseTime;
+	int maxTemp;
+	int minTemp;
+};
+
 #endif /* DTOS_H_ */

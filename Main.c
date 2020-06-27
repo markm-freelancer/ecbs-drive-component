@@ -20,7 +20,6 @@ int main() {
   InputParams input;
   OutputParams output;
   while ((input = readInputParams()).value != EOF && input.value != 'q') {
-  	//printf ("%c\n", input.value);
   	system("CLS");
   	printInputParams(input);
   	output = processInputParams(input);
