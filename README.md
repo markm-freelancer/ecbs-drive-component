@@ -33,5 +33,15 @@ y = 10/9 x - 1000/9
 
 else, 0
 
+## Configuration file
+
+The configuration file is the file drive.conf. This file must be located in the same directory as the built executable. It must contain integer values of the following properties in the correct order:
+
+Hold to start time (ms)
+Hold zone threshold for joystick
+Hold to cruise time (ms)
+Max temperature
+Min temperature
+
 
 

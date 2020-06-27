@@ -1,15 +1,17 @@
 #ifndef STATEMACHINE_H
 #define STATEMACHINE_H
 
-#define SLOPE 1.11111f
-#define B 111.11111f
+#define SLOPE 10.0000f/9.0000f
+#define B 1000.0000f/9.0000f
 #define ACTIVE_BACK -100
 #define ACTIVE_FWD 100.0
 #define MS_PER_INVOCATION 100
 
 #include <stdbool.h>
+#include <math.h>
 #include "Dtos.h"
 #include "States.h"
+#include "ConfigReader.h"
 
 struct StateMachine {
 	int holdToStartDuration;
@@ -110,7 +112,7 @@ void calculateMotorThrottle(InputParams input, StateMachine &stateMachine) {
 	int motorThrottle = getMotorThrottle(input.joystickPos);
 	bool outsideHoldzoneNegative, outsideHoldzonePositive;
 
-	printf("\nHold zone: %d", stateMachine.config.holdZoneForJoystick);
+	printf("\nHold to cruize joystick threshold: %d", stateMachine.config.holdZoneForJoystick);
 	printf("\nHold to cruise duration: %d", stateMachine.holdToCruiseDuration);
 	printf("\nHold to cruise time: %d", stateMachine.config.holdToCruiseTime);
 
@@ -150,10 +152,10 @@ void calculateMotorThrottle(InputParams input, StateMachine &stateMachine) {
 int getMotorThrottle(int joystickPos) {
 	if (joystickPos < ACTIVE_BACK) {
 		//y = (10/9)x + 1000/9
-		return (SLOPE * joystickPos) + B;
+		return round((SLOPE * joystickPos) + B);
 	} else if (joystickPos > ACTIVE_FWD) {
 		//y = (10/9)x - 1000/9
-		return (SLOPE * joystickPos) - B;
+		return round((SLOPE * joystickPos) - B);
 	}
 	return 0;
 }
