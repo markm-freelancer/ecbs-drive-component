@@ -1,6 +1,3 @@
-#ifndef STATEMACHINE_H
-#define STATEMACHINE_H
-
 #define SLOPE 10.0000f/9.0000f
 #define B 1000.0000f/9.0000f
 #define ACTIVE_BACK -100
@@ -9,9 +6,8 @@
 
 #include <stdbool.h>
 #include <math.h>
-#include "Dtos.h"
-#include "States.h"
-#include "ConfigReader.h"
+#include <stdio.h>
+#include "DriveComponent.h"
 
 struct StateMachine {
 	int holdToStartDuration;
@@ -88,6 +84,7 @@ void processStartStop(InputParams input, StateMachine &stateMachine) {
 			} else if (!input.btnFwd || !input.btnBack) {
 				stateMachine.buttonsHeld = false;
 				stateMachine.allowEnableDisable = true;
+				stateMachine.holdToStartDuration = 0;
 			}
 		
 			if (stateMachine.buttonsHeld && stateMachine.allowEnableDisable) {
@@ -165,6 +162,4 @@ void processTemperatureParams(InputParams input, StateMachine &stateMachine) {
 		stateMachine.systemState = DISABLED;
 	}
 }
-
-#endif
 

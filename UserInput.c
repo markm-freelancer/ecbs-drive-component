@@ -1,7 +1,5 @@
-#ifndef USERINPUT_H_
-#define USERINPUT_H_
-
 #include <conio.h>
+#include "DriveComponent.h"
 
 InputParams readInputParams() {
 	static InputParams input = { 
@@ -44,6 +42,4 @@ InputParams readInputParams() {
 	input.value = key;
 	return input;
 }
-
-#endif
 

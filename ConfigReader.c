@@ -5,11 +5,9 @@
  *      Author: mmartinez
  */
 
-#ifndef CONFIG_READER_H_
-#define CONFIG_READER_H_
-
 #include <stdlib.h>
 #include <stdio.h>
+#include "DriveComponent.h"
 
 Configuration readConfiguration() {
     FILE *fp;
@@ -37,5 +35,3 @@ Configuration readConfiguration() {
 	return conf;
 }
 
-
-#endif /* CONFIG_READER_H_ */
