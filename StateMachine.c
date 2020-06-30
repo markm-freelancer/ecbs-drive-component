@@ -42,9 +42,11 @@ OutputParams processInputParams(InputParams input) {
 		true,
 		true,
 		{0, 0},
-		readConfiguration(),
+		NULL,
 		DISABLED,
 	};
+
+	stateMachine.config = readConfiguration();
 
 	//start / stop check
 	processStartStop(input, stateMachine);
